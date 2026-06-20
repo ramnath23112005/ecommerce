@@ -10,10 +10,9 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "declaration": true,
-    "declarationMap": true,
     "sourceMap": true,
     "moduleResolution": "node",
+    "ignoreDeprecations": "5.0",
     "paths": {
       "@shared/*": ["../shared/*"],
       "@/*": ["./src/*"]
