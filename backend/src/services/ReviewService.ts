@@ -1,7 +1,7 @@
 import Review from '../models/Review';
 import Order from '../models/Order';
 import { NotFoundError, BadRequestError } from '../utils/AppError';
-import { IReview } from '../../shared/types';
+import { IReview } from '../../../shared/types';
 import { ProductService } from './ProductService';
 
 export class ReviewService {

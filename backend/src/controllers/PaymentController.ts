@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { PaymentService } from '../services/PaymentService';
 import { AuthRequest } from '../middleware/auth';
-import { IAPIResponse } from '../../shared/types';
+import { IAPIResponse } from '../../../shared/types';
 import Order from '../models/Order';
 
 const paymentService = new PaymentService();

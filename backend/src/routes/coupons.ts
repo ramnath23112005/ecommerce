@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { createCoupon, getAllCoupons, getCouponByCode, updateCoupon, deleteCoupon } from '../controllers/CouponController';
 import { protect, authorize } from '../middleware/auth';
-import { UserRole } from '../../shared/enums';
+import { UserRole } from '../../../shared/enums';
 
 const router = Router();
 

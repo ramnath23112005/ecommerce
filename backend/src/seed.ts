@@ -4,7 +4,7 @@ import User from './models/User';
 import Category from './models/Category';
 import Product from './models/Product';
 import Coupon from './models/Coupon';
-import { UserRole, ProductStatus } from '../shared/enums';
+import { UserRole, ProductStatus } from '../../shared/enums';
 
 const seed = async () => {
   try {

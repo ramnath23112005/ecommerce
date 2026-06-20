@@ -2,7 +2,7 @@ import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import { config } from './index';
 import User from '../models/User';
-import { UserRole } from '../../shared/enums';
+import { UserRole } from '../../../shared/enums';
 
 passport.use(
   new GoogleStrategy(

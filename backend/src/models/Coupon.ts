@@ -1,6 +1,6 @@
 import mongoose, { Schema, Document } from 'mongoose';
-import { ICoupon } from '../../shared/types';
-import { DiscountType } from '../../shared/enums';
+import { ICoupon } from '../../../shared/types';
+import { DiscountType } from '../../../shared/enums';
 
 export interface ICouponDocument extends ICoupon, Document {}
 

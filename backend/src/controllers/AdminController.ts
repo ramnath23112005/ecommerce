@@ -3,8 +3,8 @@ import User from '../models/User';
 import Product from '../models/Product';
 import Order from '../models/Order';
 import { AuthRequest } from '../middleware/auth';
-import { IAPIResponse } from '../../shared/types';
-import { UserRole } from '../../shared/enums';
+import { IAPIResponse } from '../../../shared/types';
+import { UserRole } from '../../../shared/enums';
 
 export const getAllUsers = async (req: AuthRequest, res: Response<IAPIResponse>, next: NextFunction) => {
   try {

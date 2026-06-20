@@ -1,5 +1,5 @@
 import mongoose, { Schema, Document } from 'mongoose';
-import { ICart, ICartItem } from '../../shared/types';
+import { ICart, ICartItem } from '../../../shared/types';
 
 export interface ICartDocument extends ICart, Document {}
 

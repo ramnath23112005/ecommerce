@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { OrderService } from '../services/OrderService';
 import { AuthRequest } from '../middleware/auth';
-import { IAPIResponse } from '../../shared/types';
+import { IAPIResponse } from '../../../shared/types';
 
 const orderService = new OrderService();
 

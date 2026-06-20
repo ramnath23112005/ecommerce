@@ -1,7 +1,7 @@
 import Stripe from 'stripe';
 import Razorpay from 'razorpay';
 import { config } from '../config';
-import { PaymentMethod, PaymentStatus } from '../../shared/enums';
+import { PaymentMethod, PaymentStatus } from '../../../shared/enums';
 import { BadRequestError } from '../utils/AppError';
 import Payment from '../models/Payment';
 import Order from '../models/Order';

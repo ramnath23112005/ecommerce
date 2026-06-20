@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import Category from '../models/Category';
 import { NotFoundError } from '../utils/AppError';
-import { IAPIResponse } from '../../shared/types';
+import { IAPIResponse } from '../../../shared/types';
 import { cacheData, getCachedData } from '../config/redis';
 
 export const getAllCategories = async (_req: Request, res: Response<IAPIResponse>, next: NextFunction) => {

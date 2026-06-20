@@ -1,7 +1,7 @@
 import { Response, NextFunction } from 'express';
 import { CartService } from '../services/CartService';
 import { AuthRequest } from '../middleware/auth';
-import { IAPIResponse } from '../../shared/types';
+import { IAPIResponse } from '../../../shared/types';
 
 const cartService = new CartService();
 

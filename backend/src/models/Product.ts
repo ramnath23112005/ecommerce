@@ -1,7 +1,7 @@
 import mongoose, { Schema, Document } from 'mongoose';
 import slugify from 'slugify';
-import { ProductStatus } from '../../shared/enums';
-import { IProduct, IVariant } from '../../shared/types';
+import { ProductStatus } from '../../../shared/enums';
+import { IProduct, IVariant } from '../../../shared/types';
 
 export interface IProductDocument extends IProduct, Document {}
 

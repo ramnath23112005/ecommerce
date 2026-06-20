@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { ProductService } from '../services/ProductService';
 import { AuthRequest } from '../middleware/auth';
-import { IAPIResponse } from '../../shared/types';
+import { IAPIResponse } from '../../../shared/types';
 
 const productService = new ProductService();
 

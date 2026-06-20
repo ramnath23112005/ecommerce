@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { ReviewService } from '../services/ReviewService';
 import { AuthRequest } from '../middleware/auth';
-import { IAPIResponse } from '../../shared/types';
+import { IAPIResponse } from '../../../shared/types';
 
 const reviewService = new ReviewService();
 

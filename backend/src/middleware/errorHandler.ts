@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { AppError, ValidationError } from '../utils/AppError';
 import logger from '../utils/logger';
 import { config } from '../config';
-import { IAPIResponse } from '../../shared/types';
+import { IAPIResponse } from '../../../shared/types';
 
 export const errorHandler = (
   err: Error,

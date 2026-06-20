@@ -3,8 +3,8 @@ import jwt from 'jsonwebtoken';
 import { config } from '../config';
 import { UnauthorizedError, ForbiddenError } from '../utils/AppError';
 import User from '../models/User';
-import { IJWTPayload } from '../../shared/types';
-import { UserRole } from '../../shared/enums';
+import { IJWTPayload } from '../../../shared/types';
+import { UserRole } from '../../../shared/enums';
 
 export interface AuthRequest extends Request {
   user?: any;

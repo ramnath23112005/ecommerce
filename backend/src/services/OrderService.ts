@@ -3,8 +3,8 @@ import { ProductRepository } from '../repositories/ProductRepository';
 import Product from '../models/Product';
 import Coupon from '../models/Coupon';
 import { NotFoundError, BadRequestError } from '../utils/AppError';
-import { IOrder, IOrderItem } from '../../shared/types';
-import { OrderStatus, PaymentMethod, PaymentStatus } from '../../shared/enums';
+import { IOrder, IOrderItem } from '../../../shared/types';
+import { OrderStatus, PaymentMethod, PaymentStatus } from '../../../shared/enums';
 import { generateOrderNumber } from '../utils/helpers';
 import { sendOrderConfirmationEmail } from '../utils/email';
 

@@ -1,5 +1,5 @@
 import mongoose, { Schema, Document } from 'mongoose';
-import { IWishlist } from '../../shared/types';
+import { IWishlist } from '../../../shared/types';
 
 export interface IWishlistDocument extends IWishlist, Document {}
 

@@ -1,6 +1,6 @@
 import mongoose, { Schema, Document } from 'mongoose';
-import { PaymentMethod, PaymentStatus } from '../../shared/enums';
-import { IPayment } from '../../shared/types';
+import { PaymentMethod, PaymentStatus } from '../../../shared/enums';
+import { IPayment } from '../../../shared/types';
 
 export interface IPaymentDocument extends IPayment, Document {}
 

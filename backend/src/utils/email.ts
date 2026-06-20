@@ -1,7 +1,7 @@
 import nodemailer from 'nodemailer';
 import { config } from '../config';
 import logger from './logger';
-import { IEmailOptions } from '../../shared/types';
+import { IEmailOptions } from '../../../shared/types';
 
 const transporter = nodemailer.createTransport({
   host: config.email.host,

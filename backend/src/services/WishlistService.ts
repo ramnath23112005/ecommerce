@@ -1,6 +1,6 @@
 import Wishlist from '../models/Wishlist';
 import { NotFoundError } from '../utils/AppError';
-import { IWishlist } from '../../shared/types';
+import { IWishlist } from '../../../shared/types';
 import { cacheData, getCachedData, invalidateCache } from '../config/redis';
 
 export class WishlistService {

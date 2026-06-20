@@ -2,7 +2,7 @@ import Cart from '../models/Cart';
 import Product from '../models/Product';
 import Coupon from '../models/Coupon';
 import { NotFoundError, BadRequestError } from '../utils/AppError';
-import { ICart } from '../../shared/types';
+import { ICart } from '../../../shared/types';
 import { cacheData, getCachedData, invalidateCache } from '../config/redis';
 
 export class CartService {

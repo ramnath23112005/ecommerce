@@ -1,7 +1,7 @@
 import { Response, NextFunction } from 'express';
 import { AnalyticsService } from '../services/AnalyticsService';
 import { AuthRequest } from '../middleware/auth';
-import { IAPIResponse } from '../../shared/types';
+import { IAPIResponse } from '../../../shared/types';
 
 const analyticsService = new AnalyticsService();
 

@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import Coupon from '../models/Coupon';
 import { AuthRequest } from '../middleware/auth';
-import { IAPIResponse } from '../../shared/types';
+import { IAPIResponse } from '../../../shared/types';
 import { NotFoundError } from '../utils/AppError';
 
 export const createCoupon = async (req: AuthRequest, res: Response<IAPIResponse>, next: NextFunction) => {

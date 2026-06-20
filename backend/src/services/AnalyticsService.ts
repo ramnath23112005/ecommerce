@@ -1,7 +1,7 @@
 import Order from '../models/Order';
 import Product from '../models/Product';
 import User from '../models/User';
-import { IAnalytics } from '../../shared/types';
+import { IAnalytics } from '../../../shared/types';
 import { cacheData, getCachedData } from '../config/redis';
 
 export class AnalyticsService {

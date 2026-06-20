@@ -3,7 +3,7 @@ import { getAllProducts, getProductBySlug, getProductById, createProduct, update
 import { protect, authorize, optionalAuth } from '../middleware/auth';
 import { validate } from '../middleware/validate';
 import { createProductSchema } from '../utils/validators';
-import { UserRole } from '../../shared/enums';
+import { UserRole } from '../../../shared/enums';
 
 const router = Router();
 

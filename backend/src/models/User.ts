@@ -1,7 +1,7 @@
 import mongoose, { Schema, Document } from 'mongoose';
 import bcrypt from 'bcryptjs';
-import { UserRole } from '../../shared/enums';
-import { IUser } from '../../shared/types';
+import { UserRole } from '../../../shared/enums';
+import { IUser } from '../../../shared/types';
 
 export interface IUserDocument extends Omit<IUser, '_id'>, Document {
   comparePassword(candidatePassword: string): Promise<boolean>;

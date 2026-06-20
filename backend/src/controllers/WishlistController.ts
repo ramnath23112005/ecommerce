@@ -1,7 +1,7 @@
 import { Response, NextFunction } from 'express';
 import { WishlistService } from '../services/WishlistService';
 import { AuthRequest } from '../middleware/auth';
-import { IAPIResponse } from '../../shared/types';
+import { IAPIResponse } from '../../../shared/types';
 
 const wishlistService = new WishlistService();
 

@@ -1,6 +1,6 @@
 import mongoose, { Schema, Document } from 'mongoose';
-import { OrderStatus, PaymentMethod, PaymentStatus } from '../../shared/enums';
-import { IOrder, IOrderItem } from '../../shared/types';
+import { OrderStatus, PaymentMethod, PaymentStatus } from '../../../shared/enums';
+import { IOrder, IOrderItem } from '../../../shared/types';
 
 export interface IOrderDocument extends IOrder, Document {}
 

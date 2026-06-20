@@ -11,7 +11,7 @@ import categoryRoutes from './categories';
 import adminRoutes from './admin';
 import sellerRoutes from './seller';
 import uploadRoutes from './upload';
-import { API_PREFIX } from '../../shared/constants';
+import { API_PREFIX } from '../../../shared/constants';
 
 const router = Router();
 

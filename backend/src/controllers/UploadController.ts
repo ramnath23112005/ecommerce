@@ -1,6 +1,6 @@
 import { Response, NextFunction } from 'express';
 import { AuthRequest } from '../middleware/auth';
-import { IAPIResponse } from '../../shared/types';
+import { IAPIResponse } from '../../../shared/types';
 import { uploadToCloudinary, uploadMultipleToCloudinary } from '../utils/cloudinaryUpload';
 
 export const uploadSingle = async (req: AuthRequest, res: Response<IAPIResponse>, next: NextFunction) => {

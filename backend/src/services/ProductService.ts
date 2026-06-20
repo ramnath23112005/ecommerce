@@ -1,8 +1,8 @@
 import { ProductRepository } from '../repositories/ProductRepository';
 import Product from '../models/Product';
 import { NotFoundError, BadRequestError } from '../utils/AppError';
-import { IProduct } from '../../shared/types';
-import { ProductStatus } from '../../shared/enums';
+import { IProduct } from '../../../shared/types';
+import { ProductStatus } from '../../../shared/enums';
 import { cacheData, getCachedData, invalidateCache } from '../config/redis';
 import { parseQueryFilters } from '../utils/helpers';
 

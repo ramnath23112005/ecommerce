@@ -3,7 +3,7 @@ import { createOrder, getOrderById, getMyOrders, cancelOrder, updateOrderStatus,
 import { protect, authorize } from '../middleware/auth';
 import { validate } from '../middleware/validate';
 import { createOrderSchema } from '../utils/validators';
-import { UserRole } from '../../shared/enums';
+import { UserRole } from '../../../shared/enums';
 
 const router = Router();
 

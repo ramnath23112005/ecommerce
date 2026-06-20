@@ -3,8 +3,8 @@ import crypto from 'crypto';
 import { config } from '../config';
 import { UserRepository } from '../repositories/UserRepository';
 import { BadRequestError, UnauthorizedError } from '../utils/AppError';
-import { IJWTPayload, IUser } from '../../shared/types';
-import { UserRole } from '../../shared/enums';
+import { IJWTPayload, IUser } from '../../../shared/types';
+import { UserRole } from '../../../shared/enums';
 import { sendWelcomeEmail, sendPasswordResetEmail } from '../utils/email';
 
 export class AuthService {
