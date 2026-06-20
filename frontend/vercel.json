@@ -1,0 +1,18 @@
+{
+  "framework": "nextjs",
+  "buildCommand": "next build",
+  "outputDirectory": ".next",
+  "installCommand": "npm install",
+  "env": {
+    "NEXT_PUBLIC_API_URL": "@next_public_api_url",
+    "NEXT_PUBLIC_STRIPE_KEY": "@next_public_stripe_key",
+    "NEXT_PUBLIC_RAZORPAY_KEY_ID": "@next_public_razorpay_key_id",
+    "NEXT_PUBLIC_GOOGLE_CLIENT_ID": "@next_public_google_client_id"
+  },
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://ecommerce-backend.onrender.com/api/:path*"
+    }
+  ]
+}
