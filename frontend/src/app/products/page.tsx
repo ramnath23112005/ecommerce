@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
@@ -11,6 +11,14 @@ import { Product, Category, Pagination } from '@/types';
 import { FiFilter, FiGrid, FiList, FiStar, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 
 export default function ProductsPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+      <ProductsContent />
+    </Suspense>
+  );
+}
+
+function ProductsContent() {
   const searchParams = useSearchParams();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -217,3 +225,4 @@ function ProductListItem({ product, listMode }: { product: Product; listMode: bo
     </Link>
   );
 }
+
