@@ -4,6 +4,7 @@ import { config } from './index';
 import User from '../models/User';
 import { UserRole } from '../../../shared/enums';
 
+if (config.google.clientId && config.google.clientSecret) {
 passport.use(
   new GoogleStrategy(
     {
@@ -41,6 +42,7 @@ passport.use(
     }
   )
 );
+}
 
 passport.serializeUser((user: any, done) => {
   done(null, user.id);
