@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
-    "build": "tsc -p tsconfig.build.json",
+    "prebuild": "npm install --include=dev",
+    "build": "tsc",
     "start": "node dist/backend/src/server.js",
     "test": "jest --passWithNoTests --detectOpenHandles",
     "test:coverage": "jest --coverage --passWithNoTests",
