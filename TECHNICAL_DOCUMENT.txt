@@ -1,0 +1,1435 @@
+================================================================================
+  DEEP TECHNICAL DOCUMENT: FULL-STACK E-COMMERCE PLATFORM
+  Repository: https://github.com/ramnath23112005/ecommerce
+================================================================================
+
+TABLE OF CONTENTS
+-----------------
+1.  PROJECT OVERVIEW
+2.  SYSTEM ARCHITECTURE
+3.  DIRECTORY STRUCTURE
+4.  TECHNOLOGY STACK
+5.  BACKEND DEEP DIVE
+    5.1 Server Entry Point
+    5.2 Configuration Layer
+    5.3 Database Models (Mongoose Schemas)
+    5.4 Repository Pattern
+    5.5 Service Layer (Business Logic)
+    5.6 Controller Layer
+    5.7 Route Definitions
+    5.8 Middleware Pipeline
+    5.9 Utility Functions
+    5.10 Validation (Zod Schemas)
+    5.11 Testing
+6.  FRONTEND DEEP DIVE
+    6.1 Next.js App Router Pages
+    6.2 State Management (Zustand Stores)
+    6.3 API Client Layer
+    6.4 Shared Components
+    6.5 Tailwind CSS Design System
+7.  SHARED MODULE
+    7.1 Type Definitions
+    7.2 Enumerations
+    7.3 Constants
+8.  AUTHENTICATION & AUTHORIZATION SYSTEM
+9.  PAYMENT GATEWAY INTEGRATION
+10. CACHING STRATEGY
+11. ORDER STATUS WORKFLOW ENGINE
+12. SEARCH SYSTEM
+13. ANALYTICS & AGGREGATION PIPELINES
+14. DEVOPS & DEPLOYMENT
+    14.1 Docker Setup
+    14.2 Docker Compose
+    14.3 CI/CD Pipeline
+    14.4 Render Deployment
+    14.5 Vercel Deployment
+    14.6 Nginx Configuration
+15. EMAIL NOTIFICATION SYSTEM
+16. FILE UPLOAD SYSTEM
+17. SECURITY IMPLEMENTATION
+18. API ENDPOINT REFERENCE
+19. DATA FLOW DIAGRAMS
+20. DATABASE INDEXING STRATEGY
+
+
+================================================================================
+1. PROJECT OVERVIEW
+================================================================================
+
+Full-stack e-commerce platform built with Next.js 14 (App Router) frontend and
+Node.js/Express backend, following Clean Architecture and Repository Pattern.
+Supports multi-role authentication (Admin, Seller, Customer), dual payment
+gateways (Stripe + Razorpay), product variant management, real-time inventory
+tracking, coupon system, and revenue analytics dashboards.
+
+Key differentiators:
+- Clean Architecture layers: Controllers -> Services -> Repositories -> Models
+- Redis caching layer for products, categories, cart, user sessions
+- MongoDB aggregation pipelines for analytics
+- Dual payment gateway integration with webhook handling
+- Order status state machine with validation
+- Full-text search via MongoDB text indexes
+
+
+================================================================================
+2. SYSTEM ARCHITECTURE
+================================================================================
+
+The application follows a layered architecture pattern:
+
+  [Browser]
+      |
+  [Next.js Frontend]  (Port 3000)
+      |  API calls via Axios
+  [Nginx Reverse Proxy]  (Port 80)
+      |
+  [Express Backend]  (Port 5000)
+      |
+  +-------+-------+-------+
+  |       |       |       |
+[MongoDB] [Redis] [ES] [Cloudinary]
+  (DB)    (Cache) (Search) (Media)
+
+Layers within Backend:
+
+  Route Layer (routing + middleware)
+      |
+  Controller Layer (HTTP request/response handling)
+      |
+  Service Layer (business logic, orchestration)
+      |
+  Repository Layer (data access abstraction)
+      |
+  Model Layer (Mongoose schemas)
+      |
+  Database (MongoDB)
+
+Dependency injection flows:
+  Controller instantiates Service
+  Service instantiates Repository
+  Repository receives Model
+
+
+================================================================================
+3. DIRECTORY STRUCTURE
+================================================================================
+
+ecommerce-platform/
+|
++-- backend/
+|   +-- src/
+|   |   +-- server.ts                 # Express app entry point
+|   |   +-- seed.ts                   # Database seeder
+|   |   +-- config/
+|   |   |   +-- index.ts              # Centralized config (env vars)
+|   |   |   +-- database.ts           # MongoDB connection
+|   |   |   +-- redis.ts              # Redis client + cache helpers
+|   |   |   +-- passport.ts           # Google OAuth strategy
+|   |   |   +-- cloudinary.ts         # Cloudinary SDK config
+|   |   +-- models/
+|   |   |   +-- User.ts               # User schema (3 roles)
+|   |   |   +-- Product.ts            # Product with embedded variants
+|   |   |   +-- Category.ts           # Hierarchical categories
+|   |   |   +-- Cart.ts               # Per-user cart
+|   |   |   +-- Order.ts              # Order with items array
+|   |   |   +-- Payment.ts            # Payment transaction log
+|   |   |   +-- Review.ts             # Product reviews
+|   |   |   +-- Coupon.ts             # Discount coupons
+|   |   |   +-- Wishlist.ts           # User wishlists
+|   |   +-- repositories/
+|   |   |   +-- BaseRepository.ts     # Generic CRUD with pagination
+|   |   |   +-- UserRepository.ts     # User-specific queries
+|   |   |   +-- ProductRepository.ts  # Product search, stock, rating
+|   |   |   +-- OrderRepository.ts    # Order analytics, seller queries
+|   |   +-- services/
+|   |   |   +-- AuthService.ts        # JWT tokens, OAuth, password reset
+|   |   |   +-- ProductService.ts     # CRUD, search, caching, rating
+|   |   |   +-- CartService.ts        # Cart operations, coupon application
+|   |   |   +-- OrderService.ts       # Order creation, status machine
+|   |   |   +-- PaymentService.ts     # Stripe/Razorpay integration
+|   |   |   +-- ReviewService.ts      # Reviews, verified purchase check
+|   |   |   +-- WishlistService.ts    # Wishlist management
+|   |   |   +-- AnalyticsService.ts   # Aggregation pipelines
+|   |   +-- controllers/
+|   |   |   +-- AuthController.ts
+|   |   |   +-- ProductController.ts
+|   |   |   +-- CategoryController.ts
+|   |   |   +-- CartController.ts
+|   |   |   +-- OrderController.ts
+|   |   |   +-- PaymentController.ts
+|   |   |   +-- ReviewController.ts
+|   |   |   +-- CouponController.ts
+|   |   |   +-- AdminController.ts
+|   |   |   +-- AnalyticsController.ts
+|   |   |   +-- UploadController.ts
+|   |   |   +-- WishlistController.ts
+|   |   +-- routes/
+|   |   |   +-- index.ts              # Route aggregator
+|   |   |   +-- auth.ts              # /api/v1/auth/*
+|   |   |   +-- products.ts          # /api/v1/products/*
+|   |   |   +-- categories.ts        # /api/v1/categories/*
+|   |   |   +-- cart.ts              # /api/v1/cart/*
+|   |   |   +-- orders.ts            # /api/v1/orders/*
+|   |   |   +-- payments.ts          # /api/v1/payments/*
+|   |   |   +-- reviews.ts           # /api/v1/products/:id/reviews/*
+|   |   |   +-- coupons.ts           # /api/v1/coupons/*
+|   |   |   +-- admin.ts             # /api/v1/admin/*
+|   |   |   +-- seller.ts            # /api/v1/seller/*
+|   |   |   +-- wishlist.ts          # /api/v1/wishlist/*
+|   |   |   +-- upload.ts            # /api/v1/upload/*
+|   |   +-- middleware/
+|   |   |   +-- auth.ts              # JWT protect, role authorize, optionalAuth
+|   |   |   +-- errorHandler.ts      # Centralized error handler
+|   |   |   +-- validate.ts          # Zod schema validation middleware
+|   |   +-- utils/
+|   |   |   +-- AppError.ts          # Custom error classes
+|   |   |   +-- helpers.ts           # Order number gen, query parser
+|   |   |   +-- logger.ts            # Winston logger
+|   |   |   +-- email.ts             # Nodemailer email sender
+|   |   |   +-- upload.ts            # Multer config
+|   |   |   +-- cloudinaryUpload.ts  # Cloudinary upload helpers
+|   |   |   +-- validators.ts        # Zod schemas
+|   |   +-- interfaces/
+|   |   |   +-- index.ts             # IRepository<T>, IServiceResponse
+|   |   +-- types/
+|   |   |   +-- hpp.d.ts             # Type declaration for hpp
+|   |   +-- tests/
+|   |       +-- setup.ts             # Jest test setup
+|   |       +-- auth.test.ts         # Auth tests
+|   +-- .env.example
+|   +-- .eslintrc.json
+|   +-- jest.config.js
+|   +-- tsconfig.json
+|   +-- package.json
+|
++-- frontend/
+|   +-- src/
+|   |   +-- app/
+|   |   |   +-- layout.tsx
+|   |   |   +-- globals.css
+|   |   |   +-- page.tsx              # Homepage
+|   |   |   +-- products/
+|   |   |   |   +-- page.tsx          # Product listing + filters
+|   |   |   |   +-- [slug]/page.tsx   # Product detail
+|   |   |   +-- cart/page.tsx         # Shopping cart
+|   |   |   +-- checkout/page.tsx     # Checkout flow
+|   |   |   +-- login/page.tsx        # Login (email + Google)
+|   |   |   +-- register/page.tsx     # Registration
+|   |   |   +-- orders/
+|   |   |   |   +-- page.tsx          # My orders list
+|   |   |   |   +-- [id]/page.tsx     # Order detail + status stepper
+|   |   |   +-- profile/page.tsx      # User profile
+|   |   |   +-- wishlist/page.tsx     # Wishlist
+|   |   |   +-- admin/page.tsx        # Admin dashboard
+|   |   |   +-- seller/page.tsx       # Seller dashboard
+|   |   +-- components/
+|   |   |   +-- Navbar.tsx
+|   |   |   +-- Footer.tsx
+|   |   |   +-- Providers.tsx         # React Query, Toaster
+|   |   +-- store/
+|   |   |   +-- authStore.ts          # Zustand auth state
+|   |   |   +-- cartStore.ts          # Zustand cart state
+|   |   +-- lib/
+|   |   |   +-- api.ts                # Axios API client
+|   |   |   +-- utils.ts              # formatPrice, formatDate, classNames
+|   |   +-- types/
+|   |       +-- index.ts              # Frontend type definitions
+|   +-- .env.local.example
+|   +-- next.config.js
+|   +-- tailwind.config.ts
+|   +-- tsconfig.json
+|   +-- package.json
+|   +-- vercel.json
+|
++-- shared/
+|   +-- index.ts                      # Re-exports
+|   +-- types.ts                      # IUser, IProduct, IOrder, etc.
+|   +-- enums.ts                      # UserRole, OrderStatus, etc.
+|   +-- constants.ts                  # API_PREFIX, CACHE_TTL, etc.
+|
++-- docker/
+|   +-- Dockerfile.backend
+|   +-- Dockerfile.frontend
+|   +-- nginx.conf
+|
++-- scripts/
+|   +-- setup.sh                      # One-click setup script
+|
++-- .github/workflows/
+|   +-- ci-cd.yml                     # Full CI/CD pipeline
+|
++-- docker-compose.yml                # Multi-container orchestration
++-- render.yaml                       # Render.com deployment config
++-- package.json                      # Root workspace scripts
++-- API.md                            # API documentation
++-- DEPLOYMENT.md                     # Deployment guide
++-- RESUME.md                         # Resume-ready project description
++-- Prompt.txt                        # Original generation prompt
+
+
+================================================================================
+4. TECHNOLOGY STACK
+================================================================================
+
+BACKEND:
+- Runtime: Node.js 20+
+- Framework: Express 4.19
+- Language: TypeScript 5.4
+- Database: MongoDB 8 (Mongoose 8 ODM)
+- Cache: Redis 7 (ioredis 5)
+- Auth: JWT (jsonwebtoken), Passport.js (Google OAuth 2.0)
+- Payments: Stripe SDK 15, Razorpay SDK 2
+- Validation: Zod 3.23
+- Logging: Winston 3
+- Email: Nodemailer
+- File Upload: Multer + Cloudinary SDK
+- Security: Helmet, CORS, express-rate-limit, express-mongo-sanitize, hpp
+- Testing: Jest + ts-jest
+- Dev: ts-node-dev (hot reload)
+
+FRONTEND:
+- Framework: Next.js 14 (App Router)
+- Language: TypeScript 5.4
+- Styling: Tailwind CSS 3.4
+- State: Zustand 4 (client), React Query/TanStack Query 5 (server)
+- Forms: react-hook-form + @hookform/resolvers
+- HTTP: Axios 1.7
+- UI: react-icons (Feather icons), react-hot-toast
+- Payments: @stripe/react-stripe-js, @stripe/stripe-js
+- Deployment: Vercel (frontend), Render (backend)
+
+DEVOPS:
+- Containerization: Docker, Docker Compose
+- Reverse Proxy: Nginx (Alpine)
+- CI/CD: GitHub Actions
+- Deployment: Docker Hub, SSH deploy
+
+
+================================================================================
+5. BACKEND DEEP DIVE
+================================================================================
+
+5.1 Server Entry Point (src/server.ts)
+---------------------------------------
+The Express server initializes in a specific order:
+
+1. Connect to MongoDB (mongoose.connect)
+2. Apply middleware stack (order matters):
+   a. helmet() - Security headers
+   b. cors() - CORS with credentials, specific origin
+   c. compression() - Gzip response compression
+   d. cookieParser() - Parse cookies
+   e. express.json({ limit: '10mb' }) - JSON body parsing
+   f. express.urlencoded() - URL-encoded body parsing
+   g. mongoSanitize() - Prevent NoSQL injection ($, .)
+   h. hpp() - HTTP parameter pollution protection
+   i. rateLimit() - 100 req / 15 min per IP
+   j. morgan() - HTTP request logging (dev format or combined to Winston)
+   k. passport.initialize() - Google OAuth
+3. Mount routes via /api/v1/*
+4. notFoundHandler (404)
+5. errorHandler (centralized error handling)
+6. Process event handlers: unhandledRejection, uncaughtException
+
+5.2 Configuration Layer (src/config/)
+--------------------------------------
+All environment variables are centralized in src/config/index.ts and exported
+as a typed config object. Sub-modules:
+- database.ts: mongoose.connect with retry logic, event handlers
+- redis.ts: Singleton Redis client with retry strategy, cache helpers:
+    cacheData(key, data, ttl=300) - SETEX
+    getCachedData<T>(key) - GET + JSON.parse
+    invalidateCache(pattern) - KEYS + DEL
+- passport.ts: Google OAuth20 strategy with find-or-create logic
+- cloudinary.ts: Cloudinary SDK configuration
+
+5.3 Database Models (Mongoose Schemas)
+---------------------------------------
+9 models with embedded subdocuments and compound indexes:
+
+User:
+  Fields: name, email, password (bcrypt hashed, select:false), role (enum),
+          avatar, googleId, isEmailVerified, phone, address (embedded),
+          refreshToken (select:false), resetPasswordToken/Expire
+  Hooks: pre('save') hashes password if modified
+  Methods: comparePassword()
+  Indexes: {email:1}, {role:1}
+  JSON transform: strips password, tokens, __v
+
+Product:
+  Fields: name, slug (auto-generated via slugify), description, category (ref),
+          seller (ref), brand, variants[] (embedded subdoc), tags[], attributes
+          (Map), status (enum), averageRating, numReviews, isFeatured
+  Variants subdoc: sku, size?, color?, price, salePrice?, stock, images[], isActive
+  Virtual: 'reviews' joins Review model on product field
+  Indexes: {name:'text', description:'text', tags:'text', brand:'text'},
+            {slug:1}, {category:1, status:1}, {seller:1}, {averageRating:-1},
+            {'variants.sku':1}
+
+Category:
+  Fields: name, slug, description, image, parent (self-ref), isActive
+  Hooks: auto-slugify on name change
+  Indexes: {slug:1}, {parent:1}, {isActive:1}
+
+Cart:
+  Fields: user (unique ref), items[] (embedded), totalAmount, totalItems,
+          coupon?, discount?
+  Items subdoc: product (ref), variant (ref), quantity, price
+  Index: {user:1}
+
+Order:
+  Fields: orderNumber (unique, generated), user (ref), items[] (embedded with
+          product, variant, name, image, quantity, price), shippingAddress
+          (embedded), billingAddress, paymentMethod (enum), paymentStatus (enum),
+          paymentDetails (Mixed), orderStatus (enum), subtotal, tax, shippingCost,
+          discount, couponCode?, total, trackingNumber?, estimatedDelivery?,
+          deliveredAt?, notes?
+  Indexes: {orderNumber:1}, {user:1, createdAt:-1}, {orderStatus:1},
+            {paymentStatus:1}, {createdAt:-1}
+
+Payment:
+  Fields: order (ref), user (ref), method (enum), amount, currency (default INR),
+          status (enum), transactionId?, gatewayResponse (Mixed)
+  Indexes: {order:1}, {transactionId:1}, {status:1}
+
+Review:
+  Fields: product (ref), user (ref), rating (1-5), title, comment, images[],
+          isVerifiedPurchase
+  Compound unique index: {product:1, user:1}
+  Index: {product:1, rating:-1}
+
+Coupon:
+  Fields: code (unique, uppercase), description, discountType (enum),
+          discountValue, minOrderAmount, maxDiscount?, usageLimit, usedCount,
+          isActive, startsAt, expiresAt, applicableCategories[],
+          applicableProducts[]
+  Indexes: {code:1}, {isActive:1, expiresAt:1}
+
+Wishlist:
+  Fields: user (unique ref), products[] (refs)
+  Index: {user:1}
+
+5.4 Repository Pattern (src/repositories/)
+-------------------------------------------
+Abstracts data access behind interfaces, enabling:
+- Swappable data sources
+- Consistent pagination
+- Reusable query logic
+
+BaseRepository<T> implements IRepository<T>:
+  findById(id), findAll(query), create(data), update(id, data), delete(id),
+  count(query), findOne(query), findWithPagination(query, options)
+
+findWithPagination is the core method - all paginated endpoints use it:
+  - Computes skip from page/limit
+  - Runs find + countDocuments in parallel via Promise.all
+  - Returns { data, total, page, limit }
+
+Specialized Repositories:
+  UserRepository: findByEmail, findByEmailWithPassword (+password select),
+                  findByGoogleId, updateRefreshToken
+  ProductRepository: findBySlug (populated), findByCategory, findBySeller,
+                     search (text score sort), updateStock ($inc), getTopRated,
+                     getFeatured
+  OrderRepository: findByOrderNumber (populated), findByUser, findBySeller
+                   (via product join), getSalesAnalytics (aggregation)
+
+5.5 Service Layer (Business Logic)
+------------------------------------
+Each service encapsulates domain logic and coordinates between repositories,
+external services, and caching.
+
+AuthService:
+  - register(): checks duplicate email, creates user, generates JWT pair,
+    sends welcome email, stores refresh token
+  - login(): finds user with password, compares bcrypt, generates tokens
+  - refreshToken(): verifies refresh JWT, checks user exists, rotates tokens
+  - logout(): nullifies refresh token in DB
+  - forgotPassword(): generates crypto token, stores hash + expiry, sends email
+  - resetPassword(): verifies hash + expiry, updates password
+  - googleLogin(): find-or-create by googleId or email, generates tokens
+  Token generation: jwt.sign with payload {id, email, role}
+  Uses separate secrets for access and refresh tokens with different expiry
+
+ProductService:
+  - getAll(): parses query filters via parseQueryFilters(), checks Redis cache,
+    queries ProductRepository with pagination, caches result (300s TTL)
+  - search(): delegates to ProductRepository.search() with text scoring
+  - getBySlug() / getById(): delegates, throws NotFoundError
+  - create() / update() / delete(): CRUD with seller ownership check, invalidates
+    product cache on mutation
+  - updateRating(): aggregation pipeline to compute averageRating and numReviews
+  - getTopRated() / getFeatured(): cached (600s TTL)
+
+CartService:
+  - getCart(): lazy-create if no cart exists, cached (300s TTL)
+  - addItem(): validates product active, variant exists, stock sufficient; if item
+    exists increment quantity, else push new item; recalculates totals
+  - updateItem() / removeItem() / clearCart(): standard cart mutations
+  - applyCoupon(): validates coupon code/active/expiry/usage limit/min amount,
+    computes discount (percentage min maxDiscount or fixed), stores on cart
+  - removeCoupon(): clears coupon + discount
+
+OrderService:
+  - create(): iterates items validating each product/variant/stock, computes
+    subtotal, validates coupon if provided, deducts usage, calculates tax (18%),
+    shipping (free above 500), total, generates order number (timestamp+random),
+    creates order, decrements stock for each variant, sends confirmation email
+  - Status machine (updateStatus): validates transition via allowedTransitions
+    map, sets deliveredAt on delivery
+  - cancel(): only pending or confirmed orders can be cancelled
+  - updatePaymentStatus(): updates order status to confirmed on payment success
+
+PaymentService:
+  - createStripePaymentIntent(): creates Stripe PaymentIntent with amount*100,
+    stores Payment record in PROCESSING status
+  - handleStripeWebhook(): verifies Stripe signature, handles
+    payment_intent.succeeded and payment_intent.payment_failed, updates both
+    Order and Payment records
+  - createRazorpayOrder(): creates Razorpay order, stores Payment record
+  - verifyRazorpayPayment(): HMAC-SHA256 signature verification, updates records
+  - processRefund(): Stripe refund creation, updates records
+
+ReviewService:
+  - create(): checks for existing review (one per user per product), checks if
+    user has a delivered order for verified purchase badge, creates review,
+    triggers product rating recalculation
+  - update() / delete(): ownership check, rating recalculation
+
+WishlistService:
+  - getWishlist(): lazy-create, cached (300s TTL)
+  - addProduct() / removeProduct(): deduplication, cache invalidation
+
+AnalyticsService:
+  - getAdminAnalytics(): 5 parallel aggregation pipelines:
+    1. Revenue by day (dateToString, group by date, limit 30)
+    2. Orders by status (group by orderStatus)
+    3. Top products by revenue (unwind items, group, lookup product name, limit 10)
+    4. Total active products count
+    5. Total users count
+    Cached (600s TTL)
+  - getSellerAnalytics(): filtered to seller's products, similar pipelines
+
+5.6 Controller Layer
+---------------------
+Controllers are thin - they:
+1. Extract params/body/query/user from request
+2. Call the appropriate service method
+3. Format the response with consistent { success, data?, message?, pagination? }
+4. Pass errors to next(error) for centralized handling
+
+No business logic in controllers. Example pattern:
+  const getAllProducts = async (req, res, next) => {
+    try {
+      const result = await productService.getAll(req.query);
+      res.json({ success: true, data: result.data, pagination: {...} });
+    } catch (error) { next(error); }
+  };
+
+5.7 Route Definitions
+----------------------
+Route files are organized by domain. Key patterns:
+
+Public routes (no auth):
+  GET /products, /products/search, /products/top-rated, /products/featured
+  GET /products/slug/:slug, /products/:id
+  GET /categories, /categories/:slug
+  GET /coupons/code/:code
+  POST /auth/register, /auth/login, /auth/refresh-token
+  POST /auth/forgot-password, /auth/reset-password/:token
+  GET /auth/google, /auth/google/callback
+  POST /payments/stripe/webhook
+
+Protected routes (auth required, role-gated):
+  Auth profile: GET /auth/me, PUT /auth/profile, POST /auth/logout
+  Cart: all routes
+  Orders: all routes (sellers/admins get different views)
+  Reviews: POST/PUT/DELETE (auth required)
+  Wishlist: all routes
+  Upload: all routes
+  Admin: all routes (admin only)
+  Seller: /seller/analytics (seller/admin)
+  Products: POST/PUT/DELETE (seller/admin)
+  Categories: POST/PUT/DELETE (admin only)
+  Coupons: GET/POST/PUT/DELETE (admin only)
+
+5.8 Middleware Pipeline (in order of application)
+--------------------------------------------------
+1. helmet() - Sets security headers (X-Frame-Options, XSS Protection, etc.)
+2. cors() - Restricts to frontend URL, allows credentials
+3. compression() - Gzip all responses
+4. cookieParser() - Parse cookies into req.cookies
+5. express.json({ limit: '10mb' }) - Parse JSON bodies (large for images)
+6. express.urlencoded({ extended: true })
+7. express-mongo-sanitize - Strips $ and . from inputs
+8. hpp - HTTP Parameter Pollution protection
+9. express-rate-limit - 100 requests per 15-minute window per IP
+10. morgan - HTTP logging (dev or Winston combined)
+11. passport.initialize() - OAuth
+12. Route-specific:
+    - protect: JWT verification via Bearer token or cookie
+    - authorize(...roles): Role-checking middleware
+    - validate(schema): Zod schema validation middleware
+13. notFoundHandler - 404 fallback
+14. errorHandler - Centralized error handler:
+    - Maps AppError subclasses to status codes
+    - Handles mongoose ValidationError (400), CastError (400), duplicate key (409)
+    - Handles JWT errors (JsonWebTokenError, TokenExpiredError -> 401)
+    - Logs all errors via Winston
+    - In development, includes stack trace
+
+5.9 Utility Functions (src/utils/)
+-----------------------------------
+
+AppError.ts:
+  AppError (base): statusCode, message, code
+  BadRequestError (400), UnauthorizedError (401), ForbiddenError (403),
+  NotFoundError (404), ValidationError (400 with field-level errors)
+
+helpers.ts:
+  generateOrderNumber(): timestamp(ms) + 6 random digits
+  parseQueryFilters(query): Converts query string params to MongoDB filter
+    object; supports operators like price[gte], price[lte], rating[gte];
+    handles category slug-to-id lookup
+
+logger.ts:
+  Winston logger with:
+  - Console transport (development)
+  - File transport: combined.log + error.log with daily rotation
+  - Timestamp + JSON format
+
+email.ts:
+  sendWelcomeEmail(to, name): HTML welcome template
+  sendPasswordResetEmail(to, token): Reset link email
+  sendOrderConfirmationEmail(to, name, orderNumber, total): Order confirmation
+  Uses Nodemailer with SMTP transport (Gmail, configurable)
+
+upload.ts:
+  Multer disk storage to backend/uploads/
+  File filter: images only (jpeg, jpg, png, gif, webp)
+  Size limit: 5MB
+
+cloudinaryUpload.ts:
+  uploadToCloudinary(localPath): Uploads single file, returns URL
+  uploadMultipleToCloudinary(paths): Uploads multiple files, returns URLs
+  Deletes local file after upload
+
+validators.ts:
+  Zod schemas for request validation:
+  registerSchema: { name (2-50), email (valid format), password (6+) }
+  loginSchema: { email, password }
+  createProductSchema: { name, description, category, brand, variants[],
+    tags[], attributes, status }
+  createOrderSchema: { items[], shippingAddress, billingAddress, paymentMethod,
+    couponCode? }
+  createReviewSchema: { rating (1-5), title, comment }
+
+5.10 Validation (Zod)
+-----------------------
+The validate middleware uses Zod's safeParse() to validate request bodies.
+On failure, it constructs a field-level error map and throws ValidationError
+with 400 status. This provides consistent, detailed error messages to clients.
+
+5.11 Testing (src/tests/)
+--------------------------
+Jest + ts-jest configuration:
+  testEnvironment: node
+  Module name mapper: @/ -> src/, @shared/ -> ../shared/
+
+Test files:
+  setup.ts: test configuration
+  auth.test.ts: auth endpoint tests
+
+Test command: npm test (with --passWithNoTests flag)
+
+
+================================================================================
+6. FRONTEND DEEP DIVE
+================================================================================
+
+6.1 Next.js App Router Pages
+-----------------------------
+14 page files under src/app/, all using 'use client' directive:
+
+Homepage (page.tsx):
+  - Fetches featured products, top-rated products, categories on mount
+  - Hero section with gradient background and CTA
+  - Feature grid (Free Shipping, Secure Payment, Easy Returns, 24/7 Support)
+  - Category cards linking to /products?category={slug}
+  - Featured Products section (grid of ProductCard)
+  - Top Rated Products section
+
+Products Listing (products/page.tsx):
+  - Wrapped in Suspense for useSearchParams
+  - Filter sidebar: category select, price range, sorting
+  - Grid/List view toggle
+  - Pagination with page numbers + prev/next
+  - Loading skeleton state
+
+Product Detail (products/[slug]/page.tsx):
+  - Image gallery with main image + thumbnails
+  - Variant selectors (size + color)
+  - Add to cart + Add to wishlist buttons
+  - Price display (with sale price strikethrough)
+  - Rating display
+  - Reviews section with user avatars
+  - Loading skeleton
+
+Cart (cart/page.tsx):
+  - Item list with quantity +/- controls and remove button
+  - Coupon code input and application
+  - Order summary (subtotal, shipping, discount, total)
+  - Proceed to Checkout button
+  - Empty cart state
+
+Checkout (checkout/page.tsx):
+  - Shipping address form
+  - Payment method selection (COD, Stripe, Razorpay)
+  - Order summary with item list
+  - Place Order button
+  - Stripe: redirects to Stripe Checkout
+  - Razorpay: opens Razorpay modal
+
+Orders (orders/page.tsx):
+  - Order cards with status badges, item thumbnails, total
+  - Empty state with CTA
+
+Order Detail (orders/[id]/page.tsx):
+  - Status stepper (7-step workflow)
+  - Order info cards (shipping, payment, summary)
+  - Item list
+  - Cancel button (for pending/confirmed orders)
+
+Login (login/page.tsx):
+  - Email + password form
+  - Google OAuth button
+  - Link to register
+
+Register (register/page.tsx):
+  - Name + email + password + confirm password form
+
+Profile (profile/page.tsx):
+  - User info display/edit
+  - Address management
+
+Admin Dashboard (admin/page.tsx):
+  - Stats cards (revenue, orders, products, users)
+  - Quick links to management pages
+
+Seller Dashboard (seller/page.tsx):
+  - Seller-specific analytics
+  - Product management links
+
+Wishlist (wishlist/page.tsx):
+  - Grid of wishlist products
+  - Remove from wishlist button
+
+6.2 State Management (Zustand Stores)
+--------------------------------------
+authStore.ts:
+  State: user, isAuthenticated, isLoading, error
+  Actions:
+    login(email, password): POST /auth/login, sets user + token
+    register(name, email, password): POST /auth/register
+    logout(): POST /auth/logout, clears state
+    checkAuth(): Verifies stored token, fetches /auth/me
+    updateProfile(data): PUT /auth/profile
+  Persistence: token stored in localStorage
+  Initialization: checks localStorage on app load
+
+cartStore.ts:
+  State: cart, isLoading, error
+  Actions:
+    fetchCart(): GET /cart
+    addItem(productId, variantId, quantity): POST /cart/items
+    updateItem(variantId, quantity): PUT /cart/items/:variantId
+    removeItem(variantId): DELETE /cart/items/:variantId
+    clearCart(): DELETE /cart
+    applyCoupon(code): POST /cart/coupon
+    removeCoupon(): DELETE /cart/coupon
+  All mutations refetch cart after success
+
+6.3 API Client Layer (src/lib/api.ts)
+---------------------------------------
+Axios instance with:
+  baseURL: process.env.NEXT_PUBLIC_API_URL
+  Default headers: { Content-Type: 'application/json' }
+  Interceptor: Attaches Bearer token from localStorage
+  Response interceptor: Handles 401 by clearing auth state
+
+API service objects (each returns Axios promise):
+  authAPI: register, login, refreshToken, logout, getMe, updateProfile
+  productAPI: getAll(params), getBySlug(slug), getById(id), create(data),
+              update(id, data), delete(id), search(params), featured(), topRated()
+  categoryAPI: getAll(), getBySlug(slug), create(data), update(id, data), delete(id)
+  cartAPI: getCart(), addItem(data), updateItem(variantId, qty),
+           removeItem(variantId), clearCart(), applyCoupon(code), removeCoupon()
+  orderAPI: create(data), getById(id), getMyOrders(params), cancel(id),
+            getAll(params), updateStatus(id, status)
+  paymentAPI: createIntent(data), verifyRazorpay(data)
+  reviewAPI: getByProduct(productId), create(productId, data),
+             update(id, data), delete(id)
+  wishlistAPI: getWishlist(), addProduct(productId), removeProduct(productId)
+  adminAPI: getDashboard(), getUsers(params), updateUserRole(id, role),
+            deleteUser(id)
+  sellerAPI: getAnalytics(params)
+  uploadAPI: single(file), multiple(files)
+
+6.4 Shared Components
+----------------------
+Navbar.tsx:
+  - Logo linking to homepage
+  - Navigation links (Products, Cart, Orders, Wishlist, Profile)
+  - Conditional rendering: login/register vs user menu + logout
+  - Cart item count badge
+  - Mobile hamburger menu
+  - Responsive design
+
+Footer.tsx:
+  - Links, copyright, social icons
+  - Multi-column layout
+
+Providers.tsx:
+  - QueryClientProvider (React Query)
+  - Toaster (react-hot-toast)
+  - Auth initialization via useAuthStore
+
+6.5 Tailwind CSS Design System (globals.css)
+---------------------------------------------
+Custom component classes:
+  .btn-primary: indigo-600 bg, white text, rounded-lg, hover state, disabled state
+  .btn-secondary: white bg, gray border, hover state
+  .btn-danger: red-600 bg
+  .input-field: full-width, border, rounded-lg, focus ring
+  .card: white bg, rounded-xl, shadow-sm, border
+  .badge: inline-flex pill with rounded-full
+  .badge-success/warning/danger/info: badge with semantic colors
+
+Design tokens (tailwind.config.ts):
+  Primary palette: indigo (50-900)
+  Font: Inter (Google Fonts)
+  Content paths: all app/ components/ directories
+
+
+================================================================================
+7. SHARED MODULE
+================================================================================
+
+Located at /shared, imported by both frontend and backend.
+
+7.1 Type Definitions (types.ts)
+---------------------------------
+IUser, IAddress, ICategory, IVariant, IProduct, IReview, ICartItem, ICart,
+IWishlist, IOrderItem, IOrder, ICoupon, IPayment, IAnalytics, IAPIResponse<T>,
+IPagination, IJWTPayload, IEmailOptions, ISearchQuery
+
+7.2 Enumerations (enums.ts)
+----------------------------
+UserRole: ADMIN, SELLER, CUSTOMER
+ProductStatus: ACTIVE, INACTIVE, DRAFT, OUT_OF_STOCK, DISCONTINUED
+OrderStatus: PENDING, CONFIRMED, PROCESSING, SHIPPED, IN_TRANSIT,
+             OUT_FOR_DELIVERY, DELIVERED, CANCELLED, RETURNED, REFUNDED
+PaymentMethod: STRIPE, RAZORPAY, COD
+PaymentStatus: PENDING, PROCESSING, SUCCEEDED, FAILED, REFUNDED
+DiscountType: PERCENTAGE, FIXED
+CacheKeys: PRODUCTS, CATEGORIES, CART, USER, ORDERS
+
+7.3 Constants (constants.ts)
+-----------------------------
+API_PREFIX = '/api/v1'
+DEFAULT_PAGE_LIMIT = 20
+MAX_PAGE_LIMIT = 100
+SALT_ROUNDS = 12
+JWT_EXPIRES_IN = '7d'
+JWT_REFRESH_EXPIRES_IN = '30d'
+OTP_EXPIRY_MINUTES = 10
+CACHE_TTL = 300 (5 minutes)
+RATE_LIMIT_WINDOW = 15 * 60 * 1000
+RATE_LIMIT_MAX = 100
+UPLOAD_MAX_SIZE = 5 * 1024 * 1024
+ORDER_STATUS_FLOW: Valid state transitions map
+ROLES: readonly role constants
+COUPON_TYPES: percentage/fixed
+
+
+================================================================================
+8. AUTHENTICATION & AUTHORIZATION SYSTEM
+================================================================================
+
+Authentication Flow:
+  1. User registers (email/password) or logs in via email or Google OAuth
+  2. Server validates credentials, generates JWT pair:
+     - accessToken: short-lived (configurable, default 7d)
+     - refreshToken: long-lived (configurable, default 30d)
+  3. Both tokens returned to client
+  4. Client stores tokens (localStorage)
+  5. All API calls include Authorization: Bearer <accessToken>
+  6. When accessToken expires, client uses refreshToken to get new pair
+  7. Server maintains refreshToken in DB for invalidation on logout
+
+JWT Payload: { id: string, email: string, role: UserRole }
+
+Authorization (RBAC):
+  3-tier role system: admin > seller > customer
+  Middleware authorize(...roles) checks req.user.role against allowed roles
+  Routes are gated at the route definition level
+
+Google OAuth:
+  passport-google-oauth20 strategy
+  Flow: /auth/google -> Google consent screen -> /auth/google/callback
+  Callback: find or create user by googleId or email
+  Returns JWT pair via URL redirect: /auth/callback?token=...&refreshToken=...
+
+Password Reset:
+  forgotPassword: crypto.randomBytes(32) token, SHA256 hash stored in DB
+    with 10-min expiry, email sent with reset link containing raw token
+  resetPassword: hash incoming token, compare with DB, update password
+
+
+================================================================================
+9. PAYMENT GATEWAY INTEGRATION
+================================================================================
+
+Stripe Integration:
+  - createStripePaymentIntent(orderId, amount): Creates payment intent
+    with metadata.orderId for webhook correlation
+  - Amount converted to cents (multiply by 100)
+  - Client confirms card payment with Stripe.js
+  - Webhook endpoint (raw body, Stripe signature verification):
+    - payment_intent.succeeded: Update order status -> confirmed,
+      update payment status -> succeeded
+    - payment_intent.payment_failed: Update payment status -> failed
+  - Refunds: Stripe Refund API
+
+Razorpay Integration:
+  - createRazorpayOrder(orderId, amount): Creates Razorpay order
+    with receipt=orderId, amount in paise (multiply by 100)
+  - Client opens Razorpay checkout modal
+  - On success, client sends payment details to /verify endpoint
+  - Verify: HMAC-SHA256 signature = SHA256(razorpayOrderId | razorpayPaymentId)
+    using key_secret as HMAC key; compare with provided signature
+  - On success: update order status -> confirmed, payment -> succeeded
+
+Cash on Delivery (COD):
+  - Simple flag on order creation
+  - Payment status remains PENDING until manually updated
+  - Order transitions through workflow without online payment
+
+Payment Record:
+  Each payment attempt creates a Payment document linking order, user, method,
+  amount, currency, status, and raw gateway response for audit trail.
+
+
+================================================================================
+10. CACHING STRATEGY
+================================================================================
+
+Redis caching is used at the service layer:
+
+Cache Layers:
+  1. Product lists: cacheKey = `products:${JSON.stringify({page,limit,filters})}`
+     TTL: 300s, invalidated on product create/update/delete
+  2. Product detail (top-rated): `products:topRated` - TTL: 600s
+  3. Product detail (featured): `products:featured` - TTL: 600s
+  4. Categories: `categories` - TTL: 600s, invalidated on CRUD
+  5. User cart: `cart:${userId}` - TTL: 300s, invalidated on mutation
+  6. User wishlist: `wishlist:${userId}` - TTL: 300s, invalidated on mutation
+  7. Analytics: `analytics:admin:${startDate}:${endDate}` - TTL: 600s
+
+Cache invalidation uses pattern matching: invalidateCache('products:*')
+finds and deletes all keys matching the pattern.
+
+Redis Client:
+  - ioredis singleton
+  - Retry strategy: 3 retries with exponential backoff (200ms, 400ms, 800ms)
+  - Graceful degradation: cache failures are logged but don't crash the app
+  - Connection/error event handlers for monitoring
+
+
+================================================================================
+11. ORDER STATUS WORKFLOW ENGINE
+================================================================================
+
+The order status machine enforces valid transitions:
+
+  pending -> [confirmed, cancelled]
+  confirmed -> [processing, cancelled]
+  processing -> [shipped, cancelled]
+  shipped -> [in_transit]
+  in_transit -> [out_for_delivery]
+  out_for_delivery -> [delivered]
+  delivered -> [returned]
+  cancelled -> []
+  returned -> [refunded]
+  refunded -> []
+
+Status flow constants (shared/constants.ts):
+  ORDER_STATUS_FLOW: Record<string, string[]>
+
+Enforcement in OrderService.updateStatus():
+  const allowed = allowedTransitions[order.orderStatus] || [];
+  if (!allowed.includes(status)) throw BadRequestError(...)
+
+Special behavior:
+  On DELIVERED: sets deliveredAt timestamp
+  On payment SUCCEEDED: auto-transitions to confirmed
+  Cancellation only allowed in pending or confirmed states
+
+
+================================================================================
+12. SEARCH SYSTEM
+================================================================================
+
+Primary search: MongoDB text indexes
+  Product schema has compound text index on:
+    name, description, tags, brand
+  Search query uses $text search with text score metadata sort
+  Pagination support: page, limit
+
+Search endpoint: GET /products/search?q=keyword&category=...&minPrice=...&maxPrice=...
+  Uses ProductRepository.search() which:
+  - Builds filter from query params
+  - Adds $text search if query string present
+  - Sorts by textScore if searching, createdAt otherwise
+  - Supports category filter, price range, rating filter
+
+Elasticsearch is configured in docker-compose.yml (port 9200) but not yet
+integrated into the application code (config present, ELASTICSEARCH_URL env var).
+
+
+================================================================================
+13. ANALYTICS & AGGREGATION PIPELINES
+================================================================================
+
+Admin Analytics (AnalyticsService.getAdminAnalytics):
+  5 parallel MongoDB aggregation pipelines:
+
+  1. Revenue by Day:
+     Match: non-cancelled orders, optional date range
+     Group: by date (dateToString %Y-%m-%d)
+     Accumulate: sum(revenue), sum(orders)
+     Sort: by date ascending
+     Limit: 30 days
+
+  2. Orders by Status:
+     Group: by orderStatus
+     Accumulate: count
+
+  3. Top Products by Revenue:
+     Match: non-cancelled orders
+     Unwind: items array
+     Group: by product ID
+     Accumulate: sum(quantity) as sales, sum(price*qty) as revenue
+     Sort: by revenue descending
+     Limit: 10
+     Lookup: join with products collection for name
+
+  4. Total Active Products: countDocuments({ status: 'active' })
+
+  5. Total Users: countDocuments({})
+
+Seller Analytics (AnalyticsService.getSellerAnalytics):
+  Same pipelines but filtered to seller's products only.
+  First fetches seller's product IDs, then filters orders by those products.
+  Additionally computes: total products count, active products count.
+
+Response structure (IAnalytics):
+  {
+    totalSales, totalOrders, totalProducts, totalUsers,
+    revenueByPeriod: [{ date, revenue }],
+    ordersByStatus: [{ status, count }],
+    topProducts: [{ product, sales, revenue }],
+    salesByCategory: [] (reserved for future)
+  }
+
+All analytics results are Redis-cached with 600s TTL.
+
+
+================================================================================
+14. DEVOPS & DEPLOYMENT
+================================================================================
+
+14.1 Docker Setup (docker/)
+----------------------------
+Dockerfile.backend:
+  Multi-stage build (builder + runner):
+    Builder: node:20-alpine, copies source, runs npm install + tsc
+    Runner: node:20-alpine, copies dist + node_modules, runs as non-root user
+  Exposes port 5000
+
+Dockerfile.frontend:
+  Multi-stage build:
+    Builder: node:20-alpine, npm ci, next build
+    Runner: node:20-alpine, copies standalone output
+  Exposes port 3000
+
+14.2 Docker Compose (root docker-compose.yml)
+----------------------------------------------
+6 services:
+  mongodb: mongo:7, port 27017, named volume mongo-data
+  redis: redis:7-alpine, port 6379, named volume redis-data
+  elasticsearch: elasticsearch:8.13.0, port 9200, single-node, security disabled,
+                512MB heap, named volume elasticsearch-data
+  backend: built from Dockerfile.backend, port 5000, env_file + env overrides
+           (MONGODB_URI= mongodb://mongodb:27017/ecommerce, REDIS_URL, ES_URL),
+           depends on mongodb + redis, mounts uploads volume
+  frontend: built from Dockerfile.frontend, port 3000, env_file,
+            NEXT_PUBLIC_API_URL=http://localhost:5000, depends on backend
+  nginx: nginx:alpine, port 80, mounts custom nginx.conf, depends on frontend+backend
+
+Named volumes: mongo-data, redis-data, elasticsearch-data
+
+14.3 CI/CD Pipeline (.github/workflows/ci-cd.yml)
+--------------------------------------------------
+4 jobs running sequentially on push to main/develop:
+
+1. backend-lint-and-test:
+   - Checkout, setup Node.js 20 with npm cache
+   - npm ci, npm run lint, npm run typecheck, npm test
+
+2. frontend-lint-and-build:
+   - Checkout, setup Node.js 20 with npm cache
+   - npm ci, npm run lint, npm run build
+
+3. docker-build-and-push (main only, depends on jobs 1+2):
+   - Docker Buildx setup
+   - Docker Hub login (secrets)
+   - Build and push backend image
+   - Build and push frontend image
+
+4. deploy (main only, depends on job 3):
+   - SSH into production server
+   - docker compose pull
+   - docker compose up -d --remove-orphans
+   - docker image prune -f
+
+14.4 Render Deployment (render.yaml)
+-------------------------------------
+Backend web service:
+  Plan: free (Oregon)
+  rootDir: backend
+  Build: npm install --include=dev && npm run build
+  Start: npm start
+  Health check: GET /health
+  Environment variables with sync:false for secrets (MONGODB_URI, REDIS_URL,
+    JWT_SECRET, JWT_REFRESH_SECRET, FRONTEND_URL, STRIPE secrets, RAZORPAY keys,
+    CLOUDINARY keys, GOOGLE OAuth keys, SMTP config, ELASTICSEARCH_URL)
+  Fixed values: NODE_ENV=production, PORT=5000, JWT_EXPIRES_IN=7d,
+    JWT_REFRESH_EXPIRES_IN=30d, GOOGLE_CALLBACK_URL (Render URL),
+    SMTP_PORT=587, RATE_LIMIT_WINDOW_MS=900000, RATE_LIMIT_MAX_REQUESTS=100
+
+14.5 Vercel Deployment (vercel.json)
+-------------------------------------
+Framework: Next.js
+Build command: next build
+Output: .next
+Rewrites: /api/:path* -> https://ecommerce-backend-q536.onrender.com/api/:path*
+
+14.6 Nginx Configuration (docker/nginx.conf)
+---------------------------------------------
+Events: worker_connections 1024
+HTTP:
+  upstream frontend: server frontend:3000
+  upstream backend: server backend:5000
+  Server block (port 80):
+    / -> proxy to frontend (with WebSocket support)
+    /api/ -> proxy to backend (with X-Real-IP, X-Forwarded-For headers)
+    /health -> proxy to backend
+
+
+================================================================================
+15. EMAIL NOTIFICATION SYSTEM
+================================================================================
+
+Nodemailer-based email service (src/utils/email.ts):
+
+Transports: SMTP (default Gmail, configurable via env vars)
+
+Email Templates (HTML):
+  sendWelcomeEmail(to, name): Welcome to the platform
+  sendPasswordResetEmail(to, token): Password reset link
+  sendOrderConfirmationEmail(to, name, orderNumber, total): Order confirmation
+
+Trigger Points:
+  - User registration -> Welcome email
+  - Forgot password -> Password reset email
+  - Order placed -> Order confirmation email
+
+Configuration:
+  SMTP_HOST (smtp.gmail.com), SMTP_PORT (587), SMTP_USER, SMTP_PASS,
+  EMAIL_FROM (noreply@ecommerce.com)
+
+
+================================================================================
+16. FILE UPLOAD SYSTEM
+================================================================================
+
+Multer (src/utils/upload.ts):
+  Storage: disk (backend/uploads/)
+  File filter: image/* (jpeg, jpg, png, gif, webp)
+  Size limit: 5MB
+
+Routes:
+  POST /api/v1/upload/single - single file (field name: 'file')
+  POST /api/v1/upload/multiple - up to 10 files (field name: 'files')
+
+UploadController:
+  uploadSingle: Uploads to Cloudinary via uploadToCloudinary(), returns URL
+  uploadMultiple: Uploads all files to Cloudinary, returns URLs array
+
+Cloudinary (src/utils/cloudinaryUpload.ts):
+  uploadToCloudinary(localPath): Uploads file, deletes local file, returns URL
+  uploadMultipleToCloudinary(paths): Maps uploadToCloudinary over array
+
+Auth: All upload routes require authentication
+
+
+================================================================================
+17. SECURITY IMPLEMENTATION
+================================================================================
+
+1. HTTP Security Headers: helmet() middleware
+   - X-Content-Type-Options: nosniff
+   - X-Frame-Options: SAMEORIGIN
+   - X-XSS-Protection: 1; mode=block
+   - Strict-Transport-Security (in production)
+   - Content-Security-Policy
+
+2. CORS: Restricted to FRONTEND_URL, credentials enabled
+   - Methods: GET, POST, PUT, DELETE, PATCH
+   - Headers: Content-Type, Authorization
+
+3. Rate Limiting: 100 requests per 15-minute window per IP on /api/
+
+4. Input Validation:
+   - Zod schemas validate all request bodies
+   - express-mongo-sanitize prevents NoSQL injection ($ operators)
+   - hpp prevents HTTP parameter pollution
+
+5. Authentication:
+   - JWT with separate secrets for access and refresh tokens
+   - Passwords hashed with bcrypt (12 salt rounds)
+   - Refresh token rotation (new token issued on each refresh)
+   - Token stored in DB for server-side invalidation
+
+6. Authorization:
+   - Role-based middleware at route level
+   - Resource ownership checks in services (user can only modify own data)
+
+7. Error Handling:
+   - No stack traces in production responses
+   - Custom AppError hierarchy for consistent error responses
+   - Centralized error handler catches all error types
+
+8. Process Management:
+   - unhandledRejection and uncaughtException handlers
+   - Graceful server shutdown
+
+9. File Upload:
+   - Size limit: 5MB
+   - Type restriction: images only
+   - Cloudinary for CDN delivery (not serving from app server)
+
+10. Docker:
+    - Non-root user in production containers
+    - Alpine-based images for minimal attack surface
+
+
+================================================================================
+18. API ENDPOINT REFERENCE
+================================================================================
+
+All endpoints under /api/v1/
+
+AUTHENTICATION:
+  POST   /auth/register          Register new user
+  POST   /auth/login             Login with email/password
+  POST   /auth/refresh-token     Refresh access token
+  POST   /auth/logout            Logout (requires auth)
+  GET    /auth/me                Get current user (requires auth)
+  PUT    /auth/profile           Update profile (requires auth)
+  POST   /auth/forgot-password   Send reset email
+  PUT    /auth/reset-password/:token  Reset password
+  GET    /auth/google            Google OAuth login
+  GET    /auth/google/callback   Google OAuth callback
+
+PRODUCTS:
+  GET    /products               List with pagination, filter, sort
+  GET    /products/search        Search products
+  GET    /products/top-rated     Top 10 rated
+  GET    /products/featured      Featured products
+  GET    /products/slug/:slug    By slug
+  GET    /products/:id           By ID
+  POST   /products               Create (Seller/Admin)
+  PUT    /products/:id           Update (Seller/Admin)
+  DELETE /products/:id           Delete (Seller/Admin)
+
+CATEGORIES:
+  GET    /categories             List all
+  GET    /categories/:slug       By slug
+  POST   /categories             Create (Admin)
+  PUT    /categories/:id         Update (Admin)
+  DELETE /categories/:id         Delete (Admin)
+
+CART:
+  GET    /cart                   Get user cart
+  POST   /cart/items             Add item
+  PUT    /cart/items/:variantId  Update quantity
+  DELETE /cart/items/:variantId  Remove item
+  DELETE /cart                   Clear cart
+  POST   /cart/coupon            Apply coupon
+  DELETE /cart/coupon            Remove coupon
+
+ORDERS:
+  GET    /orders/my-orders       Current user's orders
+  GET    /orders/all             All orders (Admin/Seller)
+  POST   /orders                 Create order
+  GET    /orders/:id             Order details
+  PUT    /orders/:id/cancel      Cancel order
+  PUT    /orders/:id/status      Update status (Admin/Seller)
+
+REVIEWS:
+  GET    /products/:id/reviews   Product reviews
+  POST   /products/:id/reviews   Create review
+  PUT    /reviews/:id            Update review
+  DELETE /reviews/:id            Delete review
+
+WISHLIST:
+  GET    /wishlist               Get wishlist
+  POST   /wishlist               Add product
+  DELETE /wishlist/:productId    Remove product
+
+COUPONS:
+  GET    /coupons/code/:code     By code
+  GET    /coupons                All (Admin)
+  POST   /coupons                Create (Admin)
+  PUT    /coupons/:id            Update (Admin)
+  DELETE /coupons/:id            Delete (Admin)
+
+PAYMENTS:
+  POST   /payments/stripe/webhook     Stripe webhook
+  POST   /payments/create-intent      Create payment intent
+  POST   /payments/razorpay/verify    Verify Razorpay
+
+ADMIN:
+  GET    /admin/dashboard        Dashboard stats
+  GET    /admin/analytics        Analytics data
+  GET    /admin/users            List users
+  PUT    /admin/users/:id/role   Update role
+  DELETE /admin/users/:id        Delete user
+
+SELLER:
+  GET    /seller/analytics       Seller analytics
+
+UPLOAD:
+  POST   /upload/single          Upload single image
+  POST   /upload/multiple        Upload multiple images
+
+HEALTH:
+  GET    /health                 Health check
+
+Response Format:
+  Success: { success: true, data: {...}, pagination?: {...} }
+  Error:   { success: false, message: "...", error?: "ERROR_CODE" }
+
+
+================================================================================
+19. DATA FLOW DIAGRAMS
+================================================================================
+
+A. Product Browsing Flow:
+   Browser -> GET /products -> protect*(optionalAuth) -> ProductController.getAll
+   -> ProductService.getAll -> check Redis cache
+   -> cache hit? return cached data
+   -> cache miss? ProductRepository.findWithPagination -> MongoDB
+   -> cache result in Redis -> format pagination -> JSON response
+
+B. Checkout & Payment Flow:
+   Browser -> POST /orders -> protect -> OrderController.create
+   -> OrderService.create
+   -> validate each item (product active, stock, quantity)
+   -> validate coupon if provided
+   -> compute subtotal, tax(18%), shipping, discount, total
+   -> generate orderNumber -> save Order to MongoDB
+   -> decrement stock for each variant
+   -> send order confirmation email
+   -> return new order
+
+   Browser -> POST /payments/create-intent -> PaymentController.createPaymentIntent
+   -> PaymentService.createStripePaymentIntent
+   -> Stripe API -> save Payment record -> return clientSecret
+
+   Browser -> Stripe Checkout -> success -> Stripe webhook
+   -> POST /payments/stripe/webhook -> verify signature
+   -> payment_intent.succeeded -> update Order + Payment status
+   -> 200 OK
+
+C. Cart with Coupon Flow:
+   Browser -> POST /cart/coupon { code: "WELCOME10" }
+   -> CartService.applyCoupon
+   -> find Coupon by code, check active, not expired, not maxed out
+   -> check minOrderAmount
+   -> compute discount (percentage with max cap, or fixed)
+   -> save coupon code + discount to Cart document
+   -> invalidate cache -> return updated cart
+
+D. Analytics Aggregation Flow:
+   Browser -> GET /admin/analytics -> protect+authorize(admin)
+   -> AnalyticsController.getAdminAnalytics
+   -> AnalyticsService.getAdminAnalytics
+   -> check Redis cache -> cache hit? return
+   -> 5 parallel aggregation pipelines via Promise.all
+   -> compute totals, format response
+   -> cache for 600s -> return JSON
+
+
+================================================================================
+20. DATABASE INDEXING STRATEGY
+================================================================================
+
+User collection:
+  { email: 1 } - unique login lookup
+  { role: 1 } - RBAC filtering
+
+Product collection:
+  { name: 'text', description: 'text', tags: 'text', brand: 'text' } - full-text search
+  { slug: 1 } - URL-friendly product lookup
+  { category: 1, status: 1 } - category browsing with status filter
+  { seller: 1 } - seller's product listing
+  { averageRating: -1 } - top-rated sorting
+  { 'variants.sku': 1 } - SKU lookup for inventory
+
+Category collection:
+  { slug: 1 } - URL lookup
+  { parent: 1 } - hierarchical queries
+  { isActive: 1 } - active category filtering
+
+Cart collection:
+  { user: 1 } - unique user cart lookup
+
+Order collection:
+  { orderNumber: 1 } - unique order reference
+  { user: 1, createdAt: -1 } - user's order history
+  { orderStatus: 1 } - status filtering
+  { paymentStatus: 1 } - payment reconciliation
+  { createdAt: -1 } - recent orders listing
+
+Payment collection:
+  { order: 1 } - payment by order
+  { transactionId: 1 } - gateway transaction lookup
+  { status: 1 } - payment status filtering
+
+Review collection:
+  { product: 1, user: 1 } (unique) - one review per user per product
+  { product: 1, rating: -1 } - product reviews sorted by rating
+
+Coupon collection:
+  { code: 1 } - coupon code lookup
+  { isActive: 1, expiresAt: 1 } - active, non-expired coupons
+
+Wishlist collection:
+  { user: 1 } - unique user wishlist
+
+================================================================================
+END OF TECHNICAL DOCUMENT
+================================================================================

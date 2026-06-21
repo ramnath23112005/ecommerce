@@ -1,0 +1,53 @@
+Build a full-stack e-commerce platform using Next.js, TypeScript, Node.js, Express, MongoDB, Redis, and Stripe.
+
+Features:
+
+JWT authentication
+Google OAuth login
+Role-based access (Admin, Seller, Customer)
+Product catalog
+Product variants (size, color)
+Product reviews and ratings
+Wishlist
+Cart persistence
+Coupon system
+Stripe payment integration
+Razorpay payment integration
+Order tracking
+Inventory management
+Admin dashboard
+Seller dashboard
+Revenue analytics
+Search with filters
+Elastic search functionality
+Email notifications
+Mobile responsive UI
+Image upload via Cloudinary
+Redis caching
+Docker deployment
+CI/CD pipeline
+
+Architecture requirements:
+
+Clean Architecture
+Repository Pattern
+REST API
+Error handling middleware
+Logging
+Security best practices
+Rate limiting
+Input validation
+
+Generate:
+
+Folder structure
+Database schema
+API documentation
+Complete source code
+Deployment guide
+Resume-ready project description
+Resume Impact
+
+Looks like:
+
+Built scalable marketplace supporting authentication, payments, inventory management and analytics.
